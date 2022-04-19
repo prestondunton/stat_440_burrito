@@ -1,0 +1,144 @@
+---
+title: "Project Proposal: Burrito Cost Analysis"
+author: "Preston Dunton, Trevor Overton, Jasmine DeMeyer"
+date: '2022-04-12'
+output: pdf_document
+---
+
+# Model Proposal
+
+We would like to use the burrito dataset that Dr. Wilson made available on RStudio Cloud.  One interesting direction of study in this dataset is the cost of burritos.
+
+We can imagine that both the ingredients and the restaurant’s margins contribute to cost.  To analyze these relationships, we would build models similar to:
+
+$Cost = \beta_0 + \beta_1*hasPork +\beta_2*hasChicken +\beta_3*hasCheese +...$
+
+and
+
+$Cost = \beta_0 + \beta_1*fromOscars + \beta_2*fromDonatos + \beta_3*fromChipotle +...$
+
+Where all variables except cost are indicator variables taking on values 0 and 1.  These models use cost as a response variable. They also have parameters that can be interpreted as the marginal cost of ingredients and the marginal costs of restaurants. 
+
+## Questions
+
+These models could answer questions like:
+
+* What’s the probability that pork costs more on a burrito than chicken?
+* What is the average marginal cost of toppings on a burrito?
+* How is cost affected by the restaurant from which the burrito was purchased? 
+* Are certain restaurants significantly more expensive than others? 
+
+## Other models
+
+Depending on how this research question goes, we could then follow up with "How do additional toppings affect overall rating?", which would have a similar model, just replace our Cost variable with rating, leaving us with 
+
+$OverallRating = \beta_0+\beta_1*hasPork+\beta_2*hasChicken+\beta_3*hasCheese...$.
+
+Another way we could explore cost is to do some mean cost analysis grouped by reviewer.  We can say that each reviewer has eaten several burritos, each varying in cost.  We can then try to do some mean comparison / (or ANOVA?) analysis to figure out the probability that one person spends more on burritos than another.  Because we haven’t strictly covered ANOVA type analyses, we could just pick two reviewers and analyze their burrito spending habits.  An example question of research would be “What’s the probability that Scott spends more on burritos than Emily?”
+
+
+
+# Data Inspection
+
+## Loading Data
+
+```{r, include=FALSE}
+library(knitr)
+```
+
+```{r}
+load('./Burrito/burritodata.Rda')
+head(burrito)
+```
+
+
+There are $`r nrow(burrito)`$ observations in this dataset.
+
+Here are the different columns in the dataset:
+```{r}
+colnames(burrito)
+```
+
+## Cost
+
+We are interested in cost.  Let's see if there are any missing cost values, and then look at the distribution of costs.
+
+```{r}
+which(is.na(burrito$Cost))
+```
+
+There are two observations with `NA` costs.  Lets remove these from the dataset and continue using it.
+
+```{r}
+burrito_no_na = burrito[!is.na(burrito$Cost),]
+nrow(burrito_no_na)
+
+```
+
+```{r}
+hist(burrito_no_na$Cost)
+
+```
+
+Burrito costs appear to be somewhat normally distributed.  This is good for our linear regression models.
+
+## Ingredients
+
+We now should now investigate the ingredients, see if there are any missing values, and then see if any ingredients need to be combined into an "Other" category.
+
+
+```{r}
+
+ingredient_names = colnames(burrito_no_na)[18:50]
+num_burrito_ingredients = c()
+for (ingredient in ingredient_names) {
+  num_burrito_ingredients = c(num_burrito_ingredients, 
+                              sum(burrito_no_na[ingredient]))  
+}
+ingredient_counts_df = data.frame(ingredient=ingredient_names, 
+                                  count=num_burrito_ingredients)
+
+# sort by count
+ingredient_counts_df = ingredient_counts_df[order(ingredient_counts_df$count, decreasing=TRUE),] 
+
+kable(ingredient_counts_df, row.names=FALSE)
+
+barplot(ingredient_counts_df$count, ylab='Number of Burritos',
+        main='Ingredient Distribution', 
+        names.arg=ingredient_counts_df$ingredient, las=2)
+```
+
+It looks like there are many ingredients where there are few burritos with them.  These are good ingredients to group into an "Other" type category.  Let's decide a cutoff:
+
+```{r}
+kable(ingredient_counts_df[ingredient_counts_df$count < 10,], row.names=FALSE)
+```
+
+Just by luck, it looks like all ingredients with more than 10 burritos are quite normal (Avocado, Cilantro, Onion, ...), but all ingredients with fewer than 10 burritos are quite rare (Pineapple, Bell Pepper, Fish, Lobster, ...).  Let's use 10 as our cutoff, and now define some categories to group these ingredients into.
+
+Maybe some groups like this:
+
+* Vegetables = (Pineapple, Bell Pepper, Tomato, Cabbage, Mushroom, Corn, Carrots, Zucchini)
+* Breakfast = (Egg, Bacon, Ham)
+* Other = (Fish, Taquito, Chille Relleno, Nopales, Sushi, Lobster)
+
+These groups will be turned into new indicator variables that we can use with the other 15 ingredients (Beef through Lettuce).  Note, we might need to change the Breakfast category because it still only adds up to only 6 burritos, not over 10.
+
+
+## Restaurant Analysis
+
+```{r}
+
+location_counts_df = aggregate(data.frame(count = burrito_no_na$Location), 
+                               list(location = burrito_no_na$Location), length)
+# sort by count
+location_counts_df = location_counts_df[order(location_counts_df$count, decreasing=TRUE),] 
+
+kable(location_counts_df, row.names=FALSE)
+
+barplot(location_counts_df$count, ylab='Number of Burritos', 
+        main='Location Distribution', names.arg=location_counts_df$location, las=2)
+
+```
+
+We see that the vast majority of locations in the dataset are only represented less than 5 times.  We could possibly group these by region on a map (e.x. Downtown San Diego, ...) or we might only do analysis on the top restaurants.  We'd have to check that subsetting on the top restaurants reduces the number of ingredients in the analysis however.  Do you have any suggestions? 
