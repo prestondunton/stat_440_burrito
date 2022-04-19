@@ -17,6 +17,17 @@ and
 
 $Cost = \beta_0 + \beta_1*fromOscars + \beta_2*fromDonatos + \beta_3*fromChipotle +...$
 
+$Cost\sim N(,\sigma^2)$
+
+$\sigma^2\sim Gamma(a,b)$
+
+Let $\sigma=1.5$, and $\sigma^{2}=2.25$, this means that $a/b=2.25$.  Let $a/b^2=1$,
+this means that $a=2.25^2=5.0625$ and $b=2.25$
+
+$\mathbf{\beta}\sim MVN(\overrightarrow{0},\tau^2\textbf{I})$
+
+Let $\tau=2$ so that $\tau^2=4$
+
 Where all variables except cost are indicator variables taking on values 0 and 1.  These models use cost as a response variable. They also have parameters that can be interpreted as the marginal cost of ingredients and the marginal costs of restaurants. 
 
 ## Questions
