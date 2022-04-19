@@ -5,32 +5,58 @@ date: '2022-04-12'
 output: pdf_document
 ---
 
-# Model Proposal
+# Ingredient Model Proposal
 
 We would like to use the burrito dataset that Dr. Wilson made available on RStudio Cloud.  One interesting direction of study in this dataset is the cost of burritos.
 
-We can imagine that both the ingredients and the restaurant’s margins contribute to cost.  To analyze these relationships, we would build models similar to:
+We can imagine that both the ingredients and the restaurant’s margins contribute to cost.  To analyze these relationships, we would a model similar to:
 
-$Cost = \beta_0 + \beta_1*hasPork +\beta_2*hasChicken +\beta_3*hasCheese +...$
+$\text{Cost} = \beta_0 + \beta_1*\text{hasPork} +\beta_2*\text{hasChicken} +\beta_3*\text{hasCheese} +...$
 
-and
+or 
 
-$Cost = \beta_0 + \beta_1*fromOscars + \beta_2*fromDonatos + \beta_3*fromChipotle +...$
+$\text{Cost}\sim N(\mathbf{X}\boldsymbol{\beta},\sigma^2)$
 
-$Cost\sim N(,\sigma^2)$
+where $\mathbf{X}_{(n\times p)}=\begin{bmatrix}1 & \text{hasPork}_0 & \text{hasChicken}_0 & \text{hasCheese}_0 & ... \\ 1 & \text{hasPork}_1 & \text{hasChicken}_1 & \text{hasCheese}_1 & ... \\ ... & ... & ... & ... & ...\\1 & \text{hasPork}_n & \text{hasChicken}_n & \text{hasCheese}_n & ...\end{bmatrix}$
 
-$\sigma^2\sim Gamma(a,b)$
+$p = \text{Number of ingredients}+1$
 
-Let $\sigma=1.5$, and $\sigma^{2}=2.25$, this means that $a/b=2.25$.  Let $a/b^2=1$,
-this means that $a=2.25^2=5.0625$ and $b=2.25$
+$\boldsymbol{\beta}_{(p\times1)}=\begin{bmatrix}\beta_0 \\ \beta_1 \\ ... \\ \beta_p\end{bmatrix}$
 
-$\mathbf{\beta}\sim MVN(\overrightarrow{0},\tau^2\textbf{I})$
+$\boldsymbol{\beta}\sim MVN(\mathbf{0},\tau^2\textbf{I})$
 
-Let $\tau=2$ so that $\tau^2=4$
+$\sigma^2\sim \text{Gamma}(a,b)$
 
-Where all variables except cost are indicator variables taking on values 0 and 1.  These models use cost as a response variable. They also have parameters that can be interpreted as the marginal cost of ingredients and the marginal costs of restaurants. 
+All variables except Cost are indicator variables for the ingredients taking on values 0 and 1.  This model uses Cost as a response variable. It also has parameters that can be interpreted as the marginal cost of ingredients. 
 
-## Questions
+Because Cost should be a positive number, we expect Cost and all the $\boldsymbol\beta$ parameters to be positive.  This means we could model this situation as 
+
+$\text{Cost}\sim \text{TruncatedNormal}(\mathbf{X}\boldsymbol{\beta},\sigma^2)$ where the normal is truncated at $\text{Cost} >= 0$.
+
+$\boldsymbol{\beta}\sim \text{TruncatedMVN}(\mathbf{0},\tau^2\textbf{I})$ where the normal is truncated at $\boldsymbol\beta>=\mathbf{0}$.
+
+
+## Choosing Priors
+
+Let $\sigma=1.5$, and $\text{E}[\sigma^{2}]=2.25$, this means that $a/b=2.25$.  Let $a/b^2=1$,
+this means that $a=2.25^2=5.0625$ and $b=2.25$  This means that we expect  burritos with the same ingredients to vary by $1.50. 
+
+$\boldsymbol{\beta}\sim MVN(\mathbf{0},\tau^2\textbf{I})$
+
+Let $\tau=2$ so that $\tau^2=4$.  This means that we expect the marginal cost of an ingredient to vary by $2.00.
+
+
+# Restaurant Model Proposal
+
+If we wanted to find more information about individual restaurants, and their effect on cost, we would use a model like
+
+$\text{Cost} = \beta_0 + \beta_1*fromOscars + \beta_2*fromDonatos + \beta_3*fromChipotle +...$
+
+which would follow almost the exact same distributions and definitions as the ingredients model presented above.
+
+
+
+# Questions
 
 These models could answer questions like:
 
@@ -38,16 +64,6 @@ These models could answer questions like:
 * What is the average marginal cost of toppings on a burrito?
 * How is cost affected by the restaurant from which the burrito was purchased? 
 * Are certain restaurants significantly more expensive than others? 
-
-## Other models
-
-Depending on how this research question goes, we could then follow up with "How do additional toppings affect overall rating?", which would have a similar model, just replace our Cost variable with rating, leaving us with 
-
-$OverallRating = \beta_0+\beta_1*hasPork+\beta_2*hasChicken+\beta_3*hasCheese...$.
-
-Another way we could explore cost is to do some mean cost analysis grouped by reviewer.  We can say that each reviewer has eaten several burritos, each varying in cost.  We can then try to do some mean comparison / (or ANOVA?) analysis to figure out the probability that one person spends more on burritos than another.  Because we haven’t strictly covered ANOVA type analyses, we could just pick two reviewers and analyze their burrito spending habits.  An example question of research would be “What’s the probability that Scott spends more on burritos than Emily?”
-
-
 
 # Data Inspection
 
@@ -58,7 +74,7 @@ library(knitr)
 ```
 
 ```{r}
-load('./Burrito/burritodata.Rda')
+load('./burritodata.Rda')
 head(burrito)
 ```
 
