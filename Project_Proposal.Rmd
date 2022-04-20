@@ -65,7 +65,7 @@ These models could answer questions like:
 * How is cost affected by the restaurant from which the burrito was purchased? 
 * Are certain restaurants significantly more expensive than others? 
 
-# Data Inspection
+n
 
 ## Loading Data
 
@@ -151,6 +151,18 @@ Maybe some groups like this:
 
 These groups will be turned into new indicator variables that we can use with the other 15 ingredients (Beef through Lettuce).  Note, we might need to change the Breakfast category because it still only adds up to only 6 burritos, not over 10.
 
+## Merging Columns
+
+```{r}
+library("tidyverse")
+burrito<-burrito%>%mutate(Vegetable=as.logical(Pineapple+Bell_peper+Tomato+Cabbage+Mushroom+Corn+Carrots+Zucchini))
+burrito<-burrito%>%mutate(Breakfast=as.logical(Egg+Bacon+Ham))
+burrito<-burrito%>%mutate(Other=as.logical(Fish+Taquito+Chile_relleno+Nopales+Sushi+Lobster))
+burrito<-select(burrito, -c('Pineapple','Bell_peper','Tomato','Cabbage','Mushroom','Corn','Carrots','Zucchini','Egg','Ham','Fish','Taquito','Chile_relleno','Nopales','Sushi','Lobster'))
+burrito<-burrito%>%mutate_at(c('Vegetable','Other','Breakfast'),as.double)
+head(burrito)
+```
+
 
 ## Restaurant Analysis
 
@@ -168,4 +180,5 @@ barplot(location_counts_df$count, ylab='Number of Burritos',
 
 ```
 
-We see that the vast majority of locations in the dataset are only represented less than 5 times.  We could possibly group these by region on a map (e.x. Downtown San Diego, ...) or we might only do analysis on the top restaurants.  We'd have to check that subsetting on the top restaurants reduces the number of ingredients in the analysis however.  Do you have any suggestions? 
+We see that the vast majority of locations in the dataset are only represented less than 5 times.  We could possibly group these by region on a map (e.x. Downtown San Diego, ...) or we might only do analysis on the top restaurants.  We'd have to check that subsetting on the top restaurants reduces the number of ingredients in the analysis however.  Do you have any suggestions?
+
