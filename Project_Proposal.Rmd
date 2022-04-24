@@ -25,7 +25,7 @@ $\boldsymbol{\beta}_{(p\times1)}=\begin{bmatrix}\beta_0 \\ \beta_1 \\ ... \\ \be
 
 $\boldsymbol{\beta}\sim MVN(\mathbf{0},\tau^2\textbf{I})$
 
-$\sigma^2\sim \text{Gamma}(a,b)$
+$\sigma^{-2}\sim \text{Gamma}(a,b)$
 
 All variables except Cost are indicator variables for the ingredients taking on values 0 and 1.  This model uses Cost as a response variable. It also has parameters that can be interpreted as the marginal cost of ingredients. 
 
@@ -38,8 +38,10 @@ $\boldsymbol{\beta}\sim \text{TruncatedMVN}(\mathbf{0},\tau^2\textbf{I})$ where 
 
 ## Choosing Priors
 
-Let $\sigma=1.5$, and $\text{E}[\sigma^{2}]=2.25$, this means that $a/b=2.25$.  Let $a/b^2=1$,
-this means that $a=2.25^2=5.0625$ and $b=2.25$  This means that we expect  burritos with the same ingredients to vary by $1.50. 
+Let $\sigma=1.5$ and $\text{E}[\sigma^{-2}]=\frac{1}{1.5^2}=0.\overline{44}$. This means that we expect  burritos with the same ingredients to vary by $1.50. 
+
+This means that $a/b=0.\overline{44}$.  Let $a/b^2=1$.
+$a=0.\overline{44}\;^2=0.1975$ and $b=0.\overline{44}$  
 
 $\boldsymbol{\beta}\sim MVN(\mathbf{0},\tau^2\textbf{I})$
 
@@ -50,10 +52,17 @@ Let $\tau=2$ so that $\tau^2=4$.  This means that we expect the marginal cost of
 
 If we wanted to find more information about individual restaurants, and their effect on cost, we would use a model like
 
-$\text{Cost} = \beta_0 + \beta_1*fromOscars + \beta_2*fromDonatos + \beta_3*fromChipotle +...$
+$\text{Cost} = \beta_0 + \beta_1*\text{fromOscars} + \beta_2*\text{fromDonatos} + \beta_3*\text{fromChipotle} +...$
 
 which would follow almost the exact same distributions and definitions as the ingredients model presented above.
 
+This model could be problematic because many of the restaurants only have a couple of burritos in the dataset, meaning that their parameters will be fit on only a few observations.  This dramatically increases the variance of these parameters.
+
+One option is to group the restaurants by geographical region.  This would increase the number of observations per parameter, but be very time expensive with respect to manual labeling.
+
+Another option is to only use restaurants that have over a certain threshold of buritos in the dataset.  This limits the analysis to only a few restaurants.
+
+One final option is to include a random effect for restaurant in the ingredient model.
 
 
 # Questions
@@ -163,7 +172,6 @@ burrito<-burrito%>%mutate_at(c('Vegetable','Other','Breakfast'),as.double)
 head(burrito)
 ```
 
-
 ## Restaurant Analysis
 
 ```{r}
@@ -180,5 +188,5 @@ barplot(location_counts_df$count, ylab='Number of Burritos',
 
 ```
 
-We see that the vast majority of locations in the dataset are only represented less than 5 times.  We could possibly group these by region on a map (e.x. Downtown San Diego, ...) or we might only do analysis on the top restaurants.  We'd have to check that subsetting on the top restaurants reduces the number of ingredients in the analysis however.  Do you have any suggestions?
+We see that the vast majority of locations in the dataset are only represented less than 5 times.  We could possibly group these by region on a map (e.x. Downtown San Diego, ...) or we might only do analysis on the top restaurants.  We'd have to check that subsetting on the top restaurants reduces the number of ingredients in the analysis however. 
 
