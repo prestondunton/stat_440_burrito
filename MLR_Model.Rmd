@@ -1,0 +1,82 @@
+---
+title: "MLR Model"
+author: "Preston Dunton, Trevor Overton, Jasmine DeMeyer"
+date: "4/24/2022"
+output: pdf_document
+---
+
+# Imports and Constants
+
+```{r, warning=FALSE}
+library("tidyverse")
+source('./gibbs_util.R')
+
+RANDOM_SEED = 440
+```
+
+# Data Loading / Cleaning
+
+```{r}
+load('./burritodata.Rda')
+head(burrito)
+
+# Count Remove NA Cost rows
+which(is.na(burrito$Cost))
+burrito = burrito[!is.na(burrito$Cost),]
+nrow(burrito)
+
+
+burrito<-burrito%>%mutate(Vegetable=as.logical(Pineapple+Bell_peper+Tomato+Cabbage+Mushroom+Corn+Carrots+Zucchini))
+burrito<-burrito%>%mutate(Breakfast=as.logical(Egg+Bacon+Ham))
+burrito<-burrito%>%mutate(Other=as.logical(Fish+Taquito+Chile_relleno+Nopales+Sushi+Lobster))
+burrito<-select(burrito, -c('Pineapple','Bell_peper','Tomato','Cabbage','Mushroom','Corn','Carrots','Zucchini','Egg','Ham','Fish','Taquito','Chile_relleno','Nopales','Sushi','Lobster'))
+burrito<-burrito%>%mutate_at(c('Vegetable','Other','Breakfast'),as.double)
+head(burrito)
+
+ingredient_cols = colnames(burrito)[18:37]
+
+ingredient_X = as.matrix(burrito[ingredient_cols])
+dim(ingredient_X); head(ingredient_X)
+
+cost_y = burrito$Cost
+length(cost_y); head(cost_y)
+```
+
+# Model Fit with Gibbs Sampler
+
+```{r}
+set.seed(RANDOM_SEED)
+
+p = ncol(ingredient_X) + 1
+tau_2 = 4
+prior_sigma = 1.5
+a = 1 / (prior_sigma^4)
+b = 1 / (prior_sigma^2)
+
+post_dist = mlr_gibbs(ingredient_X, cost_y, mu=rep(0, p), tau_2, a, b)
+post_dist = post_dist[5001:1000, ]
+head(post_dist)
+
+```
+
+
+# Model Diagnostics
+
+```{r}
+plot_traces(post_dist[,1:5], 'Parameter Traces (After Burn In)')
+plot_traces(post_dist[,6:10], 'Parameter Traces (After Burn In)')
+plot_traces(post_dist[,11:15], 'Parameter Traces (After Burn In)')
+plot_traces(post_dist[,16:20], 'Parameter Traces (After Burn In)')
+plot_traces(post_dist[,21:22], 'Parameter Traces (After Burn In)')
+
+```
+
+
+
+```{r}
+summarize_dist(post_dist, colnames(post_dist))
+```
+
+
+# Model Interpretations
+
