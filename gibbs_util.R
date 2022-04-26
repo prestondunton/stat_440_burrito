@@ -3,8 +3,6 @@ library(tmvtnorm)
 library(pracma)
 require(reshape2)
 library(knitr)
-library(forecast)
-library(patchwork)
 library(ggfortify)
 
 
