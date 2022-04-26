@@ -100,14 +100,19 @@ plot_traces <- function(gibbs_distribution, title='', facets=TRUE) {
 acf_plots <- function(dist){
   plot_df <- melt(dist)
   colnames(plot_df) <- c('Iteration','Parameter','Estimate')
+  unique_params = unique(plot_df$Parameter)
+  
   acf.key<-list()
-  for(i in 1:length(unique(plot_df$Parameter))){
-    acf.key[[i]]<-acf(plot_df$Estimate[plot_df$Parameter==unique(plot_df$Parameter)[[i]]])
+  for(i in 1:length(unique_params)){
+    acf.key[[i]]<-acf(plot_df$Estimate[plot_df$Parameter==unique_params[[i]]], 
+                      plot=FALSE)
   }
-  autoplot(acf.key, main="ACF Plots", nbin=5)
+  
+  names(acf.key) = unique_params
+  autoplot(acf.key, nbin=5)
 }
 
-summarize_dist <- function(distribution, param_names, title='') {
+summarize_dist <- function(distribution, param_names, title='', round_places=4) {
   table = data.frame()
   
   for (i in seq(ncol(distribution))) {
@@ -120,10 +125,20 @@ summarize_dist <- function(distribution, param_names, title='') {
   }
   
   table = cbind(param_names, table)
+  table = round_df(table, round_places)
   
   kable(table, 
         col.names=c('Parameter', 'Post. Mean', 'Post. Sd', 
                     '95% CI Low', '95% CI High'),
         caption=title
   )
+}
+
+round_df <- function(x, digits) {
+  # round all numeric variables
+  # x: data frame 
+  # digits: number of digits to round
+  numeric_columns <- sapply(x, mode) == 'numeric'
+  x[numeric_columns] <-  round(x[numeric_columns], digits)
+  x
 }

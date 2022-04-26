@@ -7,7 +7,7 @@ output: pdf_document
 
 # Imports and Constants
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 library("tidyverse")
 source('./gibbs_util.R')
 
@@ -26,10 +26,16 @@ burrito = burrito[!is.na(burrito$Cost),]
 nrow(burrito)
 
 
-burrito<-burrito%>%mutate(Vegetable=as.logical(Pineapple+Bell_peper+Tomato+Cabbage+Mushroom+Corn+Carrots+Zucchini))
+burrito<-burrito%>%mutate(Vegetable=as.logical(Pineapple+Bell_peper+Tomato+
+                                                 Cabbage+Mushroom+Corn+
+                                                 Carrots+Zucchini))
 burrito<-burrito%>%mutate(Breakfast=as.logical(Egg+Bacon+Ham))
-burrito<-burrito%>%mutate(Other=as.logical(Fish+Taquito+Chile_relleno+Nopales+Sushi+Lobster))
-burrito<-select(burrito, -c('Pineapple','Bell_peper','Tomato','Cabbage','Mushroom','Corn','Carrots','Zucchini','Egg','Ham','Fish','Taquito','Chile_relleno','Nopales','Sushi','Lobster','Bacon'))
+burrito<-burrito%>%mutate(Other=as.logical(Fish+Taquito+Chile_relleno+
+                                             Nopales+Sushi+Lobster))
+burrito<-select(burrito, -c('Pineapple', 'Bell_peper', 'Tomato', 'Cabbage', 
+                            'Mushroom', 'Corn', 'Carrots', 'Zucchini', 
+                            'Egg', 'Ham', 'Fish', 'Taquito', 'Chile_relleno', 
+                            'Nopales', 'Sushi', 'Lobster', 'Bacon'))
 burrito<-burrito%>%mutate_at(c('Vegetable','Other','Breakfast'),as.double)
 head(burrito)
 
@@ -53,38 +59,44 @@ prior_sigma = 1.5
 a = 1 / (prior_sigma^4)
 b = 1 / (prior_sigma^2)
 
-post_dist = mlr_gibbs(ingredient_X, cost_y, mu=rep(0, p), tau_2, a, b)
-post_dist = post_dist[5001:1000, ]
-head(post_dist)
+mlr_post_dist = mlr_gibbs(ingredient_X, cost_y, mu=rep(0, p), tau_2, a, b)
+mlr_post_dist = mlr_post_dist[5001:1000, ]
+summarize_dist(mlr_post_dist, colnames(mlr_post_dist), round_places=2)
 
 ```
-# Truncated Gibs
+
+This model won't work for us because it fits prices to be negative.  Instead, why don't we use a truncated Gibbs sampler.
+
+# Truncated Gibbs
 ```{r t_gibbs}
 set.seed(RANDOM_SEED)
 
-post_dist<-truncated_gibbs(ingredient_X, cost_y, mu=rep(1, p), tau_2, a, b, lb=rep(0,p), ub=rep(Inf,p))
+truncated_post_dist<-truncated_gibbs(ingredient_X, cost_y, mu=rep(1, p), 
+                                     tau_2, a, b, lb=rep(0,p), ub=rep(Inf,p))
+truncated_post_dist = truncated_post_dist[5001:1000, ]
 
 ```
 
 # Model Diagnostics
 
-```{r plots}
-plot_traces(post_dist[,1:5], 'Parameter Traces (After Burn In)')
-plot_traces(post_dist[,6:10], 'Parameter Traces (After Burn In)')
-plot_traces(post_dist[,11:15], 'Parameter Traces (After Burn In)')
-plot_traces(post_dist[,16:21], 'Parameter Traces (After Burn In)')
+```{r trace_plots}
+plot_traces(truncated_post_dist[,1:5], 'Parameter Traces (After Burn In)')
+plot_traces(truncated_post_dist[,6:10], 'Parameter Traces (After Burn In)')
+plot_traces(truncated_post_dist[,11:15], 'Parameter Traces (After Burn In)')
+plot_traces(truncated_post_dist[,16:21], 'Parameter Traces (After Burn In)')
 ```
+
 ```{r acf_plots}
-acf_plots(post_dist[,1:5])
-acf_plots(post_dist[,6:10])
-acf_plots(post_dist[,11:15])
-acf_plots(post_dist[,16:21])
+acf_plots(truncated_post_dist[,1:5])
+acf_plots(truncated_post_dist[,6:10])
+acf_plots(truncated_post_dist[,11:15])
+acf_plots(truncated_post_dist[,16:21])
 ```
 
 
 
 ```{r}
-summarize_dist(post_dist, colnames(post_dist))
+summarize_dist(truncated_post_dist, colnames(truncated_post_dist), round_places=2)
 ```
 
 
