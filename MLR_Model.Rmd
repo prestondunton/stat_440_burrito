@@ -39,6 +39,8 @@ burrito<-select(burrito, -c('Pineapple', 'Bell_peper', 'Tomato', 'Cabbage',
 burrito<-burrito%>%mutate_at(c('Vegetable','Other','Breakfast'),as.double)
 head(burrito)
 
+burrito = burrito %>% mutate(Num_Proteins= Chicken + Beef + Pork + Shrimp + Other + Breakfast)
+
 ingredient_cols = colnames(burrito)[18:36]
 
 ingredient_X = as.matrix(burrito[ingredient_cols])
@@ -99,6 +101,41 @@ acf_plots(truncated_post_dist[,16:21])
 summarize_dist(truncated_post_dist, colnames(truncated_post_dist), round_places=2)
 ```
 
+# Protein Models
+
+```{r}
+
+num_burritos_no_protein = sum(burrito$Num_Proteins == 0)
+num_burritos_no_protein
+num_burritos_double_protein = sum(burrito$Num_Proteins == 2)
+num_burritos_double_protein
+
+burrito_no_double = burrito[burrito$Num_Proteins != 2, ]
+head(burrito_no_double)
+
+burrito_no_double = burrito_no_double %>% mutate(Protein= as.factor(Chicken + 2*Beef + 3*Pork + 4*Shrimp + 5*Other + 6*Breakfast))
+head(burrito_no_double)
+
+```
+
+```{r}
+proteins = c('Chicken', 'Beef', 'Pork', 'Shrimp', 'Other', 'Breakfast')
+X_proteins = as.matrix(burrito[proteins])
+head(X_proteins)
+
+mlr_protein_post_dist = truncated_gibbs(X_proteins, cost_y, mu=rep(1, 7), 
+                                     tau_2, a, b, lb=rep(0,7), ub=rep(Inf,7))
+mlr_protein_post_dist = mlr_protein_post_dist[5001:1000, ]
+
+plot_traces(mlr_protein_post_dist[,1:4], 'Parameter Traces (After Burn In)')
+plot_traces(mlr_protein_post_dist[,5:8], 'Parameter Traces (After Burn In)')
+summarize_dist(mlr_protein_post_dist, colnames(mlr_protein_post_dist), round_places=2)
+```
+
+
 
 # Model Interpretations
+
+
+
 
