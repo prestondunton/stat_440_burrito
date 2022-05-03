@@ -144,61 +144,60 @@ round_df <- function(x, digits) {
 }
 
 
-mixed_gibbs <- function(y, x, niter){
+
+y <- cost_y
+group <- as.factor(burrito$Location)
   
-  group <- as.factor(burrito$Location)
+z <- model.matrix(~group-1)
   
-  z <- model.matrix(~group-1)
+w <- cbind(1, ingredient_X, z)
   
-  w <- cbind(1, x, z)
+q <- ncol(z)
+p <- ncol(w)-q
+n <- nrow(w)
   
-  q <- ncol(z)
-  p <- ncol(w)-q
-  n <- nrow(w)
+beta_keep <- matrix(NA, niter, p)
+gamma_keep <- matrix(NA, niter, q)
+sig2inv_keep <- rep(NA, niter)
+kappa2inv_keep <- rep(NA, niter)
   
-  beta_keep <- matrix(NA, niter, p)
-  gamma_keep <- matrix(NA, niter, q)
-  sig2inv_keep <- rep(NA, niter)
-  kappa2inv_keep <- rep(NA, niter)
+a1 <- 0.1975
+a2 <- 0.44
+b1 <- 0.5
+b2 <- 0.5
   
   #starting values
-  beta <- rnorm(p, 0, 2)
-  #fix gamma
-  gamma <- rnorm(q, 0, 1)
-  theta <- c(beta, gamma)
-  sig2inv <- 0.1
-  kappa2inv <- 0.1
+beta <- rnorm(p, 0, 2)
+gamma <- rnorm(q, 0, 1)
+theta <- c(beta, gamma)
+sig2inv <- rgamma(1, a1, a2)
+kappa2inv <- rgamma(1, b1, b2)
+    
+tau2 <- 4
+sigdiag <- c(0, rep(1/tau2, p-1), rep(kappa2inv,1))
   
-  a1 <- 0.1975
-  a2 <- 0.44
-  b1 <- 0.5
-  b2 <- 0.5
+for(i in 1:niter){
+  #update beta
+  v <- t(w)%*%w * sig2inv
+  sigdiag[(p+1):(p+q)] <- kappa2inv
+  diag(v) <- diag(v) + sigdiag
+  v <- chol2inv(chol(v))
     
-  tau2 <- 4
-  sigdiag <- c(0, rep(1/tau2, p-1), rep(kappa2inv,1))
-  
-  for(i in 1:niter){
-    #update beta
-    v <- t(w)%*%w * sig2inv
-    sigdiag[(p+1):(p+q)] <- kappa2inv
-    diag(v) <- diag(v) + sigdiag
-    v <- chol2inv(chol(v))
+  m <- v %*% (sig2inv*t(w)%*%y)
     
-    m <- v %*% (sig2inv*t(w)%*%y)
+  theta <- drop(m + t(chol(v)) %*% rnorm(p+q, 0, 1))
     
-    theta <- drop(m + t(chol(v)) %*% rnorm(p+q, 0, 1))
+  #update sig2inv
+  sig2inv <- rgamma(1, a1 + n/2, a2 + 0.5*sum((y-w%*%theta)^2))
     
-    #update sig2inv
-    sig2inv <- rgamma(1, a1 + n/2, a2 + 0.5*sum((y-w%*%theta)^2))
+  #update kappa2inv
+  kappa2inv <- rgamma(1, b1 + q/2, b2 + sum(theta[(p+1):(p+q)]^2))
     
-    #update kappa2inv
-    kappa2inv <- rgamma(1, b1 + q/2, b2 + sum(theta[(p+1):(p+q)]^2))
+  #store output
+  sig2inv_keep[i] <- sig2inv
+  kappa2inv_keep[i] <- kappa2inv
+  beta_keep[i,] <- theta[1:p]
+  gamma_keep[i,] <- theta[(p+1):(p+q)]
     
-    #store output
-    sig2inv_keep[i] <- sig2inv
-    kappa2inv_keep[i] <- kappa2inv
-    beta_keep[i,] <- theta[1:p]
-    gamma_keep[i,] <- theta[(p+1):(p+q)]
-    
-  }
 }
+
