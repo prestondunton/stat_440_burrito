@@ -201,6 +201,7 @@ for(i in 1:niter){
     
 }
 
+
 dic<-function(x,beta){
   dbtheta<-0
   for(i in 1:ncol(x)){
@@ -216,3 +217,4 @@ dic<-function(x,beta){
   bdtheta<--2*log(bdtheta/(nrow(beta)*ncol(beta)))
   return(2*dbtheta-bdtheta)
 }
+

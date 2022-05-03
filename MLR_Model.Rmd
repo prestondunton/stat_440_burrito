@@ -132,6 +132,17 @@ plot_traces(mlr_protein_post_dist[,5:8], 'Parameter Traces (After Burn In)')
 summarize_dist(mlr_protein_post_dist, colnames(mlr_protein_post_dist), round_places=2)
 ```
 
+# Mixed Model
+
+```{r random intercept}
+kappa2 <- mean(1/kappa2inv_keep)
+sig2 <- mean(1/sig2inv_keep)
+sig <- sqrt(sig2)
+
+
+```
+
+
 # Model Diagnostics
 
 ```{r Deviance Information Criterion}
