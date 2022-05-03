@@ -201,6 +201,13 @@ for(i in 1:niter){
     
 }
 
+kap2 <- 1/kappa2inv_keep
+sigma1 <- 1/sqrt(sig2inv_keep)
+
+res <- cbind(beta_keep, sigma1, kap2)
+colnames(res) <- c("Intercept", "Chicken", "Beef", "Pork", "Shrimp", "Other", "Breakfast", "Sigma", "Kappa2")
+
+
 
 dic<-function(x,beta){
   dbtheta<-0

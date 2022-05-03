@@ -139,7 +139,12 @@ kappa2 <- mean(1/kappa2inv_keep)
 sig2 <- mean(1/sig2inv_keep)
 sig <- sqrt(sig2)
 
+df <- data.frame(Kappa2 = kappa2, Sigma2 = sig2, Sigma = sig)
+kable(df)
 
+res <- res[5001:10000,]
+
+summarize_dist(res, colnames(res), round_places = 2)
 ```
 
 
