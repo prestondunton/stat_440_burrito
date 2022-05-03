@@ -97,13 +97,13 @@ acf_plots(truncated_post_dist[,16:21])
 
 
 
-```{r}
+```{r summary}
 summarize_dist(truncated_post_dist, colnames(truncated_post_dist), round_places=2)
 ```
 
 # Protein Models
 
-```{r}
+```{r protein subsetting}
 
 num_burritos_no_protein = sum(burrito$Num_Proteins == 0)
 num_burritos_no_protein
@@ -118,7 +118,7 @@ head(burrito_no_double)
 
 ```
 
-```{r}
+```{r mixed model}
 proteins = c('Chicken', 'Beef', 'Pork', 'Shrimp', 'Other', 'Breakfast')
 X_proteins = as.matrix(burrito[proteins])
 head(X_proteins)
@@ -132,10 +132,20 @@ plot_traces(mlr_protein_post_dist[,5:8], 'Parameter Traces (After Burn In)')
 summarize_dist(mlr_protein_post_dist, colnames(mlr_protein_post_dist), round_places=2)
 ```
 
+# Model Diagnostics
 
+```{r Deviance Information Criterion}
+mlr_dist<-dic(ingredient_X,mlr_post_dist)
+truncated_dist<-dic(ingredient_X, truncated_post_dist)
+reduced<-dic(X_proteins,mlr_protein_post_dist)
+mlr_dist
+truncated_dist
+reduced
+
+```
 
 # Model Interpretations
 
-
+As the DIC for our reduced model is 14.94, while the other two models are about 20, the reduced model better explains the variance in our data.
 
 
