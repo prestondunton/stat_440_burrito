@@ -202,3 +202,19 @@ mixed_gibbs <- function(y, x, niter){
     
   }
 }
+
+dic<-function(x,beta){
+  dbtheta<-0
+  for(i in 1:ncol(x)){
+    dbtheta<-sum(x[,i]*mean(beta[,i]))+dbtheta
+  }
+  dbtheta<--2*log(dbtheta)
+  bdtheta<-0
+  for(i in 1:ncol(x)){
+    for(ii in 1:nrow(beta)){
+      bdtheta<-sum(x[,i]*beta[ii,i])+bdtheta
+    }
+  }
+  bdtheta<--2*log(bdtheta/(nrow(beta)*ncol(beta)))
+  return(2*dbtheta-bdtheta)
+}
