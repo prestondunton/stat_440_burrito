@@ -151,9 +151,9 @@ summarize_dist(res, colnames(res), round_places = 2)
 # Model Diagnostics
 
 ```{r Deviance Information Criterion}
-mlr_dist<-dic(ingredient_X,mlr_post_dist)
-truncated_dist<-dic(ingredient_X, truncated_post_dist)
-reduced<-dic(X_proteins,mlr_protein_post_dist)
+mlr_dist<-dic(x=ingredient_X,beta=mlr_post_dist[,-ncol(mlr_post_dist)],sig2=mlr_post_dist[,ncol(mlr_post_dist)],y=cost_y)
+truncated_dist<-dic(x=ingredient_X, beta=truncated_post_dist[,-ncol(truncated_post_dist)],sig2=truncated_post_dist[,ncol(truncated_post_dist)],y=cost_y)
+reduced<-dic(x=X_proteins,beta=mlr_protein_post_dist[,-ncol(mlr_protein_post_dist)],sig2=mlr_protein_post_dist[,ncol(mlr_protein_post_dist)],y=cost_y)
 mlr_dist
 truncated_dist
 reduced
@@ -162,6 +162,6 @@ reduced
 
 # Model Interpretations
 
-As the DIC for our reduced model is 14.94, while the other two models are about 20, the reduced model better explains the variance in our data.
+As the DIC for our reduced truncated model is 44.878, while the standard mlr is -152, and the truncated is -129, the reduced model better explains the variance in our data.
 
 

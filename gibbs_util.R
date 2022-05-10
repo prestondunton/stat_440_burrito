@@ -144,14 +144,13 @@ round_df <- function(x, digits) {
 }
 
 
-
 y <- cost_y
 group <- as.factor(burrito$Location)
   
 z <- model.matrix(~group-1)
-  
+
 w <- cbind(1, ingredient_X, z)
-  
+
 q <- ncol(z)
 p <- ncol(w)-q
 n <- nrow(w)
@@ -166,7 +165,7 @@ a2 <- 0.44
 b1 <- 0.5
 b2 <- 0.5
   
-  #starting values
+#starting values
 beta <- rnorm(p, 0, 2)
 gamma <- rnorm(q, 0, 1)
 theta <- c(beta, gamma)
@@ -209,19 +208,15 @@ colnames(res) <- c("Intercept", "Chicken", "Beef", "Pork", "Shrimp", "Other", "B
 
 
 
-dic<-function(x,beta){
+dic<-function(x,y,beta,sig2){
+  x<-cbind(1,x)
+  niter<-ncol(x)
   dbtheta<-0
-  for(i in 1:ncol(x)){
-    dbtheta<-sum(x[,i]*mean(beta[,i]))+dbtheta
+  xbeta<-x%*%t(beta)
+  for(i in 1:niter){
+    dbtheta<--2*sum(dnorm(y,xbeta[,i],sig2),log=TRUE)
   }
-  dbtheta<--2*log(dbtheta)
-  bdtheta<-0
-  for(i in 1:ncol(x)){
-    for(ii in 1:nrow(beta)){
-      bdtheta<-sum(x[,i]*beta[ii,i])+bdtheta
-    }
-  }
-  bdtheta<--2*log(bdtheta/(nrow(beta)*ncol(beta)))
-  return(2*dbtheta-bdtheta)
+  dbtheta<-dbtheta/niter
+  dtheta_b<--2*sum(dnorm(y,rowMeans(xbeta),mean(sig2)),log=TRUE)
+  return(2*dtheta_b-dbtheta)
 }
-
