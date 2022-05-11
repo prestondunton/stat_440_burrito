@@ -207,7 +207,6 @@ sigma1 <- 1/sqrt(sig2inv_keep)
 
 res <- cbind(beta_keep, sigma1, kap2)
 colnames(res) <- c("Intercept", "Chicken", "Beef", "Pork", "Shrimp", "Other", "Breakfast", "Sigma", "Kappa2")
-dim(res)
 
 
 dic<-function(x,y,beta,sig2){
