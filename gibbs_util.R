@@ -143,78 +143,82 @@ round_df <- function(x, digits) {
   x
 }
 
+set.seed(RANDOM_SEED)
+niter <- 10000
+y <- cost_y
+group <- as.factor(burrito$Location)
+  
+z <- model.matrix(~group-1)
 
-mixed_gibbs <- function(y, x, niter){
+w <- cbind(1, X_proteins, z)
+
+q <- ncol(z)
+p <- ncol(w)-q
+n <- nrow(w)
   
-  group <- as.factor(burrito$Location)
+beta_keep <- matrix(NA, niter, p)
+gamma_keep <- matrix(NA, niter, q)
+sig2inv_keep <- rep(NA, niter)
+kappa2inv_keep <- rep(NA, niter)
   
-  z <- model.matrix(~group-1)
-  
-  w <- cbind(1, x, z)
-  
-  q <- ncol(z)
-  p <- ncol(w)-q
-  n <- nrow(w)
-  
-  beta_keep <- matrix(NA, niter, p)
-  gamma_keep <- matrix(NA, niter, q)
-  sig2inv_keep <- rep(NA, niter)
-  kappa2inv_keep <- rep(NA, niter)
-  
-  #starting values
-  beta <- rnorm(p, 0, 2)
-  #fix gamma
-  gamma <- rnorm(q, 0, 1)
-  theta <- c(beta, gamma)
-  sig2inv <- 0.1
-  kappa2inv <- 0.1
-  
-  a1 <- 0.1975
-  a2 <- 0.44
-  b1 <- 0.5
-  b2 <- 0.5
+a1 <- 0.1975
+a2 <- 0.44
+b1 <- 0.5
+b2 <- 0.5
+ 
+lb <- 0
+ub <- Inf
+#starting values
+beta <- drop(rtmvnorm(n=p, mean=0, sigma=2, lower=lb, upper=ub, algorithm="gibbs"))
+gamma <- drop(rtmvnorm(n=q, mean=0, sigma=2, lower=lb, upper=ub, algorithm="gibbs"))
+theta <- c(beta, gamma)
+sig2inv <- rgamma(1, a1, a2)
+kappa2inv <- rgamma(1, b1, b2)
     
-  tau2 <- 4
-  sigdiag <- c(0, rep(1/tau2, p-1), rep(kappa2inv,1))
+tau2 <- 4
+sigdiag <- c(0, rep(1/tau2, p-1), rep(kappa2inv,1))
   
-  for(i in 1:niter){
-    #update beta
-    v <- t(w)%*%w * sig2inv
-    sigdiag[(p+1):(p+q)] <- kappa2inv
-    diag(v) <- diag(v) + sigdiag
-    v <- chol2inv(chol(v))
+for(i in 1:niter){
+  #update beta
+  v <- t(w)%*%w * sig2inv
+  sigdiag[(p+1):(p+q)] <- kappa2inv
+  diag(v) <- diag(v) + sigdiag
+  v <- chol2inv(chol(v))
     
-    m <- v %*% (sig2inv*t(w)%*%y)
+  m <- v %*% (sig2inv*t(w)%*%y)
     
-    theta <- drop(m + t(chol(v)) %*% rnorm(p+q, 0, 1))
+  theta <- drop(m + t(chol(v)) %*% rtmvnorm(n=p+q, mean=0, sigma=1, lower = lb, upper=ub, algorithm = "gibbs"))
     
-    #update sig2inv
-    sig2inv <- rgamma(1, a1 + n/2, a2 + 0.5*sum((y-w%*%theta)^2))
+  #update sig2inv
+  sig2inv <- rgamma(1, a1 + n/2, a2 + 0.5*sum((y-w%*%theta)^2))
     
-    #update kappa2inv
-    kappa2inv <- rgamma(1, b1 + q/2, b2 + sum(theta[(p+1):(p+q)]^2))
+  #update kappa2inv
+  kappa2inv <- rgamma(1, b1 + q/2, b2 + sum(theta[(p+1):(p+q)]^2))
     
-    #store output
-    sig2inv_keep[i] <- sig2inv
-    kappa2inv_keep[i] <- kappa2inv
-    beta_keep[i,] <- theta[1:p]
-    gamma_keep[i,] <- theta[(p+1):(p+q)]
+  #store output
+  sig2inv_keep[i] <- sig2inv
+  kappa2inv_keep[i] <- kappa2inv
+  beta_keep[i,] <- theta[1:p]
+  gamma_keep[i,] <- theta[(p+1):(p+q)]
     
-  }
 }
 
-dic<-function(x,beta){
+kap2 <- 1/kappa2inv_keep
+sigma1 <- 1/sqrt(sig2inv_keep)
+
+res <- cbind(beta_keep, sigma1, kap2)
+colnames(res) <- c("Intercept", "Chicken", "Beef", "Pork", "Shrimp", "Other", "Breakfast", "Sigma", "Kappa2")
+
+
+dic<-function(x,y,beta,sig2){
+  x<-cbind(1,x)
+  niter<-ncol(x)
   dbtheta<-0
-  for(i in 1:ncol(x)){
-    dbtheta<-sum(x[,i]*mean(beta[,i]))+dbtheta
+  xbeta<-x%*%t(beta)
+  for(i in 1:niter){
+    dbtheta<--2*sum(dnorm(y,xbeta[,i],sig2),log=TRUE)
   }
-  dbtheta<--2*log(dbtheta)
-  bdtheta<-0
-  for(i in 1:ncol(x)){
-    for(ii in 1:nrow(beta)){
-      bdtheta<-sum(x[,i]*beta[ii,i])+bdtheta
-    }
-  }
-  bdtheta<--2*log(bdtheta/(nrow(beta)*ncol(beta)))
-  return(2*dbtheta-bdtheta)
+  dbtheta<-dbtheta/niter
+  dtheta_b<--2*sum(dnorm(y,rowMeans(xbeta),mean(sig2)),log=TRUE)
+  return(2*dtheta_b-dbtheta)
 }
