@@ -42,12 +42,33 @@ head(burrito)
 burrito = burrito %>% mutate(Num_Proteins= Chicken + Beef + Pork + Shrimp + Other + Breakfast)
 
 ingredient_cols = colnames(burrito)[18:36]
+ingredient_cols
 
 ingredient_X = as.matrix(burrito[ingredient_cols])
 dim(ingredient_X); head(ingredient_X)
 
 cost_y = burrito$Cost
 length(cost_y); head(cost_y)
+
+```
+
+```{r}
+num_burrito_ingredients = c()
+for (ingredient in ingredient_cols) {
+  num_burrito_ingredients = c(num_burrito_ingredients, 
+                              sum(burrito[ingredient]))  
+}
+ingredient_counts_df = data.frame(ingredient=ingredient_cols, 
+                                  count=num_burrito_ingredients)
+
+# sort by count
+ingredient_counts_df = ingredient_counts_df[order(ingredient_counts_df$count, decreasing=TRUE),] 
+
+kable(ingredient_counts_df, row.names=FALSE)
+
+barplot(ingredient_counts_df$count, ylab='Number of Burritos',
+        main='Ingredient Distribution', 
+        names.arg=ingredient_counts_df$ingredient, las=2)
 ```
 
 # Model Fit with Gibbs Sampler
