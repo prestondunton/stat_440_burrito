@@ -143,13 +143,13 @@ round_df <- function(x, digits) {
   x
 }
 
-
+niter <- 10000
 y <- cost_y
 group <- as.factor(burrito$Location)
   
 z <- model.matrix(~group-1)
 
-w <- cbind(1, ingredient_X, z)
+w <- cbind(1, X_proteins, z)
 
 q <- ncol(z)
 p <- ncol(w)-q
@@ -164,7 +164,9 @@ a1 <- 0.1975
 a2 <- 0.44
 b1 <- 0.5
 b2 <- 0.5
-  
+ 
+lb <- 0
+ub <- Inf
 #starting values
 beta <- rnorm(p, 0, 2)
 gamma <- rnorm(q, 0, 1)
@@ -184,7 +186,7 @@ for(i in 1:niter){
     
   m <- v %*% (sig2inv*t(w)%*%y)
     
-  theta <- drop(m + t(chol(v)) %*% rnorm(p+q, 0, 1))
+  theta <- drop(m + t(chol(v)) %*% rtmvnorm(n=p+q, mean=0, sigma=1, lower = lb, upper=ub, algorithm = "gibbs"))
     
   #update sig2inv
   sig2inv <- rgamma(1, a1 + n/2, a2 + 0.5*sum((y-w%*%theta)^2))
@@ -205,7 +207,7 @@ sigma1 <- 1/sqrt(sig2inv_keep)
 
 res <- cbind(beta_keep, sigma1, kap2)
 colnames(res) <- c("Intercept", "Chicken", "Beef", "Pork", "Shrimp", "Other", "Breakfast", "Sigma", "Kappa2")
-
+dim(res)
 
 
 dic<-function(x,y,beta,sig2){
