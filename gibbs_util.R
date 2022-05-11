@@ -143,6 +143,7 @@ round_df <- function(x, digits) {
   x
 }
 
+set.seed(RANDOM_SEED)
 niter <- 10000
 y <- cost_y
 group <- as.factor(burrito$Location)
@@ -168,8 +169,8 @@ b2 <- 0.5
 lb <- 0
 ub <- Inf
 #starting values
-beta <- rnorm(p, 0, 2)
-gamma <- rnorm(q, 0, 1)
+beta <- drop(rtmvnorm(n=p, mean=0, sigma=2, lower=lb, upper=ub, algorithm="gibbs"))
+gamma <- drop(rtmvnorm(n=q, mean=0, sigma=2, lower=lb, upper=ub, algorithm="gibbs"))
 theta <- c(beta, gamma)
 sig2inv <- rgamma(1, a1, a2)
 kappa2inv <- rgamma(1, b1, b2)

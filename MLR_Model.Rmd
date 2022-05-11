@@ -135,6 +135,7 @@ summarize_dist(mlr_protein_post_dist, colnames(mlr_protein_post_dist), round_pla
 # Mixed Model
 
 ```{r random intercept}
+set.seed(RANDOM_SEED)
 kappa2 <- mean(1/kappa2inv_keep)
 sig2 <- mean(1/sig2inv_keep)
 sig <- sqrt(sig2)
