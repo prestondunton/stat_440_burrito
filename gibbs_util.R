@@ -207,15 +207,15 @@ round_df <- function(x, digits) {
 }
 
 
-dic<-function(x,y,beta,sig2){
+dic<-function(x,y,beta,sig2,kappa=0){
   x<-cbind(1,x)
   niter<-ncol(x)
   dbtheta<-0
   xbeta<-x%*%t(beta)
   for(i in 1:niter){
-    dbtheta<--2*sum(dnorm(y,xbeta[,i],sig2),log=TRUE)
+    dbtheta<--2*sum(dnorm(y,xbeta[,i],kappa+sig2),log=TRUE)
   }
   dbtheta<-dbtheta/niter
-  dtheta_b<--2*sum(dnorm(y,rowMeans(xbeta),mean(sig2)),log=TRUE)
+  dtheta_b<--2*sum(dnorm(y,rowMeans(xbeta),mean(kappa)+mean(sig2)),log=TRUE)
   return(2*dtheta_b-dbtheta)
 }

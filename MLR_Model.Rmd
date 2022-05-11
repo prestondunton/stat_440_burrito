@@ -234,6 +234,7 @@ reduced_dic <- dic(x=proteins_X,
 mixed_dic <- dic(x=proteins_X, 
                  beta=mixed_post[,1:7],
                  sig2=mixed_post[,8],
+                 kappa=mixed_post[,9],
                  y=protein_cost_y)
 
 mlr_dic
