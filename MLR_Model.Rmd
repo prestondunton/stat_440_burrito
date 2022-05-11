@@ -71,16 +71,22 @@ barplot(ingredient_counts_df$count, ylab='Number of Burritos',
         names.arg=ingredient_counts_df$ingredient, las=2)
 ```
 
-# Model Fit with Gibbs Sampler
+# Definitions of Priors and Constants
 
-```{r gibbs}
-set.seed(RANDOM_SEED)
+```{r priors_and_consts}
 
 p = ncol(ingredient_X) + 1
 tau_2 = 4
 prior_sigma = 1.5
 a = 1 / (prior_sigma^4)
 b = 1 / (prior_sigma^2)
+
+```
+
+# Model Fit with Gibbs Sampler
+
+```{r gibbs}
+set.seed(RANDOM_SEED)
 
 mlr_post_dist = mlr_gibbs(ingredient_X, cost_y, mu=rep(0, p), tau_2, a, b)
 mlr_post_dist = mlr_post_dist[5001:1000, ]
@@ -90,26 +96,26 @@ summarize_dist(mlr_post_dist, colnames(mlr_post_dist), round_places=2)
 
 This model won't work for us because it fits prices to be negative.  Instead, why don't we use a truncated Gibbs sampler.
 
-# Truncated Gibbs
+# Full Truncated Gibbs Model
 ```{r t_gibbs}
 set.seed(RANDOM_SEED)
 
 truncated_post_dist<-truncated_gibbs(ingredient_X, cost_y, mu=rep(1, p), 
                                      tau_2, a, b, lb=rep(0,p), ub=rep(Inf,p))
 truncated_post_dist = truncated_post_dist[5001:1000, ]
-
+head(truncated_post_dist)
 ```
 
-# Model Diagnostics
+## Model Diagnostics
 
-```{r trace_plots}
+```{r t_gibbs_trace_plots}
 plot_traces(truncated_post_dist[,1:5], 'Parameter Traces (After Burn In)')
 plot_traces(truncated_post_dist[,6:10], 'Parameter Traces (After Burn In)')
 plot_traces(truncated_post_dist[,11:15], 'Parameter Traces (After Burn In)')
 plot_traces(truncated_post_dist[,16:21], 'Parameter Traces (After Burn In)')
 ```
 
-```{r acf_plots}
+```{r t_gibbs_acf_plots}
 acf_plots(truncated_post_dist[,1:5])
 acf_plots(truncated_post_dist[,6:10])
 acf_plots(truncated_post_dist[,11:15])
@@ -117,12 +123,11 @@ acf_plots(truncated_post_dist[,16:21])
 ```
 
 
-
-```{r summary}
+```{r t_gibbs_summary}
 summarize_dist(truncated_post_dist, colnames(truncated_post_dist), round_places=2)
 ```
 
-# Protein Models
+# Protein Model
 
 ```{r protein subsetting}
 
@@ -131,59 +136,115 @@ num_burritos_no_protein
 num_burritos_double_protein = sum(burrito$Num_Proteins == 2)
 num_burritos_double_protein
 
-burrito_no_double = burrito[burrito$Num_Proteins != 2, ]
-head(burrito_no_double)
+burrito_no_double_protein = burrito[burrito$Num_Proteins != 2, ]
+head(burrito_no_double_protein)
 
-burrito_no_double = burrito_no_double %>% mutate(Protein= as.factor(Chicken + 2*Beef + 3*Pork + 4*Shrimp + 5*Other + 6*Breakfast))
-head(burrito_no_double)
+burrito_no_double_protein = burrito_no_double_protein %>% mutate(Protein= as.factor(Chicken + 2*Beef + 3*Pork + 4*Shrimp + 5*Other + 6*Breakfast))
+head(burrito_no_double_protein)
+
+proteins = c('Chicken', 'Beef', 'Pork', 'Shrimp', 'Other', 'Breakfast')
+proteins_X = as.matrix(burrito_no_double_protein[proteins])
+head(proteins_X)
+
+protein_cost_y = burrito_no_double_protein$Cost
 
 ```
 
-```{r mixed model}
-proteins = c('Chicken', 'Beef', 'Pork', 'Shrimp', 'Other', 'Breakfast')
-X_proteins = as.matrix(burrito[proteins])
-head(X_proteins)
+```{r protein_model}
+set.seed(RANDOM_SEED)
 
-mlr_protein_post_dist = truncated_gibbs(X_proteins, cost_y, mu=rep(1, 7), 
-                                     tau_2, a, b, lb=rep(0,7), ub=rep(Inf,7))
+mlr_protein_post_dist = truncated_gibbs(proteins_X, protein_cost_y, mu=rep(1, 7), 
+                                        tau_2, a, b, lb=rep(0,7), ub=rep(Inf,7))
 mlr_protein_post_dist = mlr_protein_post_dist[5001:1000, ]
+head(mlr_protein_post_dist)
+```
 
+## Model Diagnostics
+
+```{r mlr_trace_plots}
 plot_traces(mlr_protein_post_dist[,1:4], 'Parameter Traces (After Burn In)')
 plot_traces(mlr_protein_post_dist[,5:8], 'Parameter Traces (After Burn In)')
+```
+
+```{r mlr_acf_plots}
+acf_plots(mlr_protein_post_dist[,1:4])
+acf_plots(mlr_protein_post_dist[,5:8])
+```
+
+
+```{r mlr_summary}
 summarize_dist(mlr_protein_post_dist, colnames(mlr_protein_post_dist), round_places=2)
 ```
 
 # Mixed Model
 
-```{r random intercept}
+```{r mixed model}
 set.seed(RANDOM_SEED)
-kappa2 <- mean(1/kappa2inv_keep)
-sig2 <- mean(1/sig2inv_keep)
-sig <- sqrt(sig2)
 
-df <- data.frame(Kappa2 = kappa2, Sigma2 = sig2, Sigma = sig)
-kable(df)
+a1 <- 0.1975
+a2 <- 0.44
+b1 <- 0.5
+b2 <- 0.5
 
-res <- res[5001:10000,]
+mixed_post = mixed_effects_gibbs(proteins_X, protein_cost_y, 
+                                 group=burrito_no_double_protein$Location, 
+                                 mu=rep(1, p), tau_2, a1, b1, a2, b2)
 
-summarize_dist(res, colnames(res), round_places = 2)
+mixed_post <- mixed_post[5001:10000,]
+head(mixed_post)
+```
+
+## Model Diagnostics
+
+```{r mixed_trace_plots}
+plot_traces(mixed_post[,1:4], 'Parameter Traces (After Burn In)')
+plot_traces(mixed_post[,5:9], 'Parameter Traces (After Burn In)')
+```
+
+```{r mixed_acf_plots}
+acf_plots(mixed_post[,1:4])
+acf_plots(mixed_post[,5:9])
+```
+
+The ACF plots for $\sigma$ and $\kappa$ both have some auto correlation.  This is not desirable, but was expected after seeing some autocorrelation in these parameters on Homework 8.  It is ignored in this project.
+
+```{r mixed_summary}
+summarize_dist(mixed_post, colnames(mixed_post), round_places = 2)
 ```
 
 
-# Model Diagnostics
+# Model Comparisons
 
 ```{r Deviance Information Criterion}
-mlr_dist<-dic(x=ingredient_X,beta=mlr_post_dist[,-ncol(mlr_post_dist)],sig2=mlr_post_dist[,ncol(mlr_post_dist)],y=cost_y)
-truncated_dist<-dic(x=ingredient_X, beta=truncated_post_dist[,-ncol(truncated_post_dist)],sig2=truncated_post_dist[,ncol(truncated_post_dist)],y=cost_y)
-reduced<-dic(x=X_proteins,beta=mlr_protein_post_dist[,-ncol(mlr_protein_post_dist)],sig2=mlr_protein_post_dist[,ncol(mlr_protein_post_dist)],y=cost_y)
-mlr_dist
-truncated_dist
-reduced
+mlr_dic <- dic(x=ingredient_X, 
+               beta=mlr_post_dist[,-ncol(mlr_post_dist)], 
+               sig2=mlr_post_dist[,ncol(mlr_post_dist)], 
+               y=cost_y)
+
+truncated_dic <- dic(x=ingredient_X, 
+                     beta=truncated_post_dist[,-ncol(truncated_post_dist)], 
+                     sig2=truncated_post_dist[,ncol(truncated_post_dist)], 
+                     y=cost_y)
+
+reduced_dic <- dic(x=proteins_X, 
+                   beta=mlr_protein_post_dist[,-ncol(mlr_protein_post_dist)],
+                   sig2=mlr_protein_post_dist[,ncol(mlr_protein_post_dist)],
+                   y=protein_cost_y)
+
+mixed_dic <- dic(x=proteins_X, 
+                 beta=mixed_post[,1:7],
+                 sig2=mixed_post[,8],
+                 y=protein_cost_y)
+
+mlr_dic
+truncated_dic
+reduced_dic
+mixed_dic
 
 ```
 
 # Model Interpretations
 
-As the DIC for our reduced truncated model is 44.878, while the standard mlr is -152, and the truncated is -129, the reduced model better explains the variance in our data.
+The reduced model has the smallest DIC of 77 compared to -152 in the MLR, -129 in the truncated MLR, and 172 in the mixed model.  According to DIC, this means that the reduced model best explains the variance in our data.
 
 
