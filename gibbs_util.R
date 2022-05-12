@@ -137,8 +137,9 @@ mixed_effects_gibbs <- function(X_raw, y, group, mu, tau_2, a1, b1, a2, b2, iter
   kap <- 1 / sqrt(kappa2inv_keep)
   sigma <- 1 / sqrt(sig2inv_keep)
   
-  res <- cbind(beta_keep, sigma, kap)
-  colnames(res) <- c("Intercept", "Chicken", "Beef", "Pork", "Shrimp", "Other", "Breakfast", "Sigma", "Kappa")
+  res <- cbind(beta_keep, sigma, kap, gamma_keep)
+  factor_names <- substring(colnames(z), first=6)
+  colnames(res) <- c("Intercept", colnames(X_raw), "Sigma", "Kappa", factor_names)
   res
   
 }

@@ -181,6 +181,8 @@ summarize_dist(mlr_protein_post_dist, colnames(mlr_protein_post_dist), round_pla
 ```{r mixed model}
 set.seed(RANDOM_SEED)
 
+#source('./gibbs_util.R')
+
 a1 <- 0.1975
 a2 <- 0.44
 b1 <- 0.5
@@ -191,7 +193,13 @@ mixed_post = mixed_effects_gibbs(proteins_X, protein_cost_y,
                                  mu=rep(1, p), tau_2, a1, b1, a2, b2)
 
 mixed_post <- mixed_post[5001:10000,]
-head(mixed_post)
+
+parameters_post <- mixed_post[, 1:9]
+head(parameters_post)
+
+restaurants_post <- mixed_post[, 10 : ncol(mixed_post)]
+head(restaurants_post)
+
 ```
 
 ## Model Diagnostics
@@ -199,17 +207,20 @@ head(mixed_post)
 ```{r mixed_trace_plots}
 plot_traces(mixed_post[,1:4], 'Parameter Traces (After Burn In)')
 plot_traces(mixed_post[,5:9], 'Parameter Traces (After Burn In)')
+plot_traces(mixed_post[,10:15], 'Parameter Traces (After Burn In)')
 ```
 
 ```{r mixed_acf_plots}
 acf_plots(mixed_post[,1:4])
 acf_plots(mixed_post[,5:9])
+acf_plots(mixed_post[,10:15])
 ```
 
 The ACF plots for $\sigma$ and $\kappa$ both have some auto correlation.  This is not desirable, but was expected after seeing some autocorrelation in these parameters on Homework 8.  It is ignored in this project.
 
 ```{r mixed_summary}
-summarize_dist(mixed_post, colnames(mixed_post), round_places = 2)
+summarize_dist(parameters_post, colnames(parameters_post), round_places = 2)
+summarize_dist(restaurants_post, colnames(restaurants_post), round_places = 2)
 ```
 
 
@@ -246,6 +257,6 @@ mixed_dic
 
 # Model Interpretations
 
-The reduced model has the smallest DIC of 77 compared to -152 in the MLR, -129 in the truncated MLR, and 172 in the mixed model.  According to DIC, this means that the reduced model best explains the variance in our data.
+The reduced model has the smallest DIC of 77 compared to -152 in the MLR, -129 in the truncated MLR, and 85 in the mixed model.  According to DIC, this means that the reduced model best explains the variance in our data.
 
 
