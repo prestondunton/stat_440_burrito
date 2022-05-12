@@ -245,7 +245,7 @@ reduced_dic <- dic(x=proteins_X,
 mixed_dic <- dic(x=proteins_X, 
                  beta=mixed_post[,1:7],
                  sig2=mixed_post[,8],
-                 kappa=mixed_post[,9],
+                 gamma=mixed_post[,10],
                  y=protein_cost_y)
 
 mlr_dic
@@ -257,6 +257,6 @@ mixed_dic
 
 # Model Interpretations
 
-The reduced model has the smallest DIC of 77 compared to -152 in the MLR, -129 in the truncated MLR, and 85 in the mixed model.  According to DIC, this means that the reduced model best explains the variance in our data.
+The reduced model has the smallest DIC of 77 compared to -152 in the MLR, -129 in the truncated MLR, and 121 in the mixed model.  According to DIC, this means that the reduced model best explains the variance in our data.
 
 
